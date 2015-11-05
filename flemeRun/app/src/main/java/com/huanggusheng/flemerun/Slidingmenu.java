@@ -15,8 +15,9 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
-public class Slidingmenu extends HorizontalScrollView {
+public class Slidingmenu extends HorizontalScrollView  {
 
 	private LinearLayout mWapper;
 	private ViewGroup mMenu;
@@ -27,6 +28,9 @@ public class Slidingmenu extends HorizontalScrollView {
 	private int mMenuWidth;
 	private boolean once;
 	private boolean isOpen;
+
+//	private RelativeLayout r1,r2,r3,r4,r5;
+
 	/**
 	 * 
 	 * 
@@ -49,7 +53,7 @@ public class Slidingmenu extends HorizontalScrollView {
 			switch (attr) {
 			case R.styleable.SlidingMenu_rightPadding:
 				mMenuRightPadding=a.getDimensionPixelSize(attr, (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP
-						, 50,context.getResources().getDisplayMetrics()));
+						, 20,context.getResources().getDisplayMetrics()));
 				break;
 			}
 		}
@@ -60,7 +64,8 @@ public class Slidingmenu extends HorizontalScrollView {
 		DisplayMetrics outMetrics=new DisplayMetrics();
 		wm.getDefaultDisplay().getMetrics(outMetrics);
 		mScreenWidth=outMetrics.widthPixels;
-		}
+
+	}
 
 	public Slidingmenu(Context context) {
 		this(context,null);
@@ -98,7 +103,7 @@ public class Slidingmenu extends HorizontalScrollView {
 		{
 		case MotionEvent.ACTION_UP:
 			int scrollX=getScrollX();			
-			if(scrollX>=mMenuWidth/2){
+			if(scrollX>=mMenuWidth/5){
 				this.smoothScrollTo(mMenuWidth, 0);
 				isOpen=false;
 			}else

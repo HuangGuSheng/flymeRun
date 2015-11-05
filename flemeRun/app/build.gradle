@@ -24,6 +24,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile files('libs/BaiduLBS_Android.jar')
     compile 'com.github.markushi:circlebutton:1.1'
-    compile 'com.ikimuhendis:ldrawer:0.1'
+    compile 'com.github.blackfizz:eazegraph:1.2.2@aar'
+    compile 'com.nineoldandroids:library:2.4.0'
     compile 'com.leaking.slideswitch:app:1.0.0'
 }

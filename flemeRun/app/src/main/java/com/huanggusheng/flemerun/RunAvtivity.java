@@ -4,12 +4,14 @@ import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -32,16 +34,12 @@ import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
 
-import org.apache.http.protocol.HttpDateGenerator;
-
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
-import javax.crypto.spec.DHGenParameterSpec;
 
 import at.markushi.ui.CircleButton;
 
@@ -74,6 +72,8 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
     private DrawLine drawLine;
     private TextToSpeech tts = null;
 
+    private long press_up_time = 0;
+
     private Button button;
     /*
     数据库相关
@@ -88,6 +88,10 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
 
     DecimalFormat df = new DecimalFormat("######0.00");      //用于保留两位double小数
 
+    /*
+    测试
+     */
+    private TextView textView_duration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +99,9 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.run_mapview);
+
+        Intent intent = getIntent();
+        isVoiceOpen = intent.getBooleanExtra("voiceState", true);
 
         /*
         把file_name写入数据库
@@ -119,7 +126,8 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
         txt_currentspeed = (TextView) findViewById(R.id.curret_speed);
         txt_distance = (TextView) findViewById(R.id.distance);
         txt_time = (TextView) findViewById(R.id.time);
-        txt_averagespeed = (TextView) findViewById(R.id.average_speed);
+//        txt_averagespeed = (TextView) findViewById(R.id.average_speed);
+        textView_duration = (TextView)findViewById(R.id.duration);
         mCircleButton = (CircleButton) findViewById(R.id.strart_Btn);
         mCircleButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,12 +165,26 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
                 SharedPreferences pref = getSharedPreferences("data",MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
                 Float old_distance = pref.getFloat("total_distance",0);
-                old_distance = old_distance+Float.parseFloat(distance+"");
+                double temp_distance;
+                temp_distance = distance/1000;
+                old_distance = old_distance+Float.parseFloat(temp_distance+"");
                 editor.putFloat("total_distance",old_distance);
                 editor.commit();
                 finish();
-                //onDestroy();
             }
+        });
+
+        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    if (tts.isLanguageAvailable(Locale.CHINESE) >= 0) {
+                        tts.setPitch(0.8f);
+                        tts.setSpeechRate(1.1f);
+                    }
+                }
+            }
+
         });
     }
 
@@ -223,15 +245,6 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
 
     }
 
-    public void voice(){
-//        if (duration % 5 == 0) {
-            tts = new TextToSpeech(getApplicationContext(), this);
-        tts.speak("你好",TextToSpeech.QUEUE_FLUSH,null);
-
-//            tts.speak("你跑了"+String.valueOf(distance)+"千米",TextToSpeech.QUEUE_FLUSH,null);
-//        }
-
-    }
 
     private class MyLocationListener implements BDLocationListener {
         @Override
@@ -252,6 +265,7 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
                 latLngs.append(",");
                 latLngs.append(longitude);
                 latLngs.append("/");
+                myLocation(latitude,longitude);
                 mLatlngList.add(latLng);
                 //往本地写数据
                 duration = mLatlngList.size();
@@ -261,30 +275,13 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
                     drawLine.draw(mLatlngList.get(duration - 3), mLatlngList.get(duration - 2),
                             mLatlngList.get(duration -1));
                     getDistance(mLatlngList.get(duration -2),mLatlngList.get(duration -1));
-                    txt_currentspeed.setText("时速"+String.valueOf(df.format(bdLocation.getSpeed()))+" km/h");
-                    txt_distance.setText("距离"+String.valueOf(df.format(distance/1000d))+" km");
-//                    Log.e("average", String.valueOf((distance / duration * 3.6)));
-                    txt_averagespeed.setText("平均速度" + String.valueOf(df.format(distance / duration *3.6)) + " km/h");
-
-                    if((int)distance%10 == 0 && (int)distance != 0){
-                        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-                            @Override
-                            public void onInit(int status) {
-                                if (status == TextToSpeech.SUCCESS) {
-                                    if (tts.isLanguageAvailable(Locale.CHINESE) >= 0) {
-                                        tts.setPitch(0.8f);
-                                        tts.setSpeechRate(1.1f);
-                                        speak();
-                                    }
-                                }
-                            }
-                            private void speak() {
-                                //boolean ttsIsInit = true;
-                                if (tts!=null) {
-                                    tts.speak("你跑了"+ String.valueOf((int)distance)+"米", TextToSpeech.QUEUE_ADD, null);
-                                }
-                            }
-                        });
+                    txt_currentspeed.setText("时速:"+String.valueOf(df.format(bdLocation.getSpeed()))+" km/h");
+                    txt_distance.setText("距离: "+String.valueOf(df.format(distance/1000))+" km");
+//                    txt_averagespeed.setText("平均速度" + String.valueOf(df.format(distance / duration *3.6)) + " km/h");
+//                    textView_duration.setText("时间: "+duration+"s");
+                    formatTime(duration);
+                    if((int)distance%50 == 0 && (int)distance != 0 && isVoiceOpen == true){
+                        voiceOut();
                     }
                     }
 
@@ -307,13 +304,32 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
             distance += DistanceUtil. getDistance(p1, p2);
         }
 
+        /**
+         * 转化时分秒
+         */
+        public void formatTime(int number) {
+            int hour,min,sec;
+            if(number > 3600) {
+                hour = number / 3600;
+                min = number/60;
+                sec = number%60;
+                textView_duration.setText("时间:"+hour+"h"+min+"min"+sec+"s");
+            }else if(number > 60){
+                min = number/60;
+                sec = number%60;
+                textView_duration.setText("时间:"+min+"min"+sec+"s");
+            }else{
+                textView_duration.setText("时间:"+number+"s");
+            }
+        }
+
     }
 
     /*
     获取当前日期，作为文件名
      */
     public String getCurrentDate(){
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy年MM月dd日HH时mm分");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy.MM.dd-HH:mm");
         Date current_date = new Date(System.currentTimeMillis());
         return formatter.format(current_date);
     }
@@ -325,7 +341,7 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
         helper = new DbHelper(this,"flymeRun.db",null,1);
         writer = helper.getWritableDatabase();
         ContentValues values = new ContentValues();
-        double speed = distance/duration;
+        double speed = distance/duration*3.6;
         int hour = duration/3600;
         duration = duration%3600;
         int min = duration/60;
@@ -334,8 +350,10 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
         //写数据
         values.put(DbHelper.COLUMN_DATE,file_name);
         values.put(DbHelper.COLUMN_DURATION,hour+"时"+min+"分"+sec+"秒");
-        values.put(DbHelper.COLUMN_DISTANCE,distance);
-        values.put(DbHelper.COLUMN_SPEED,speed);
+        String db_distance = String.valueOf(df.format(distance/1000));
+        String db_speed = String.valueOf(df.format(distance/duration*3.6));
+        values.put(DbHelper.COLUMN_DISTANCE,db_distance);
+        values.put(DbHelper.COLUMN_SPEED,db_speed);
         long resultId = writer.insert(DbHelper.TABLE_NAME,null,values);
         if (resultId>0){
             return true;
@@ -343,4 +361,41 @@ public class RunAvtivity extends Activity implements TextToSpeech.OnInitListener
             return false;
         }
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode,KeyEvent event){
+        switch (keyCode){
+            case KeyEvent.KEYCODE_VOLUME_UP :
+                if (System.currentTimeMillis() - press_up_time<500){
+                    //语音提示
+                    voiceOut();
+                }else{
+                    press_up_time = System.currentTimeMillis();
+                }
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    /*
+    语音提示
+     */
+    private void voiceOut() {
+
+        //boolean ttsIsInit = true;
+        if (tts!=null ) {
+            Log.e("语音播报", String.valueOf((int) distance) + "米");
+            tts.speak("你跑了" + String.valueOf((int) distance) + "米", TextToSpeech.QUEUE_ADD, null);
+        }
+    }
+
+    public static void actionStart(Context context, boolean isVoiceOpen) {
+        Intent intent = new Intent(context, RunAvtivity.class);
+        intent.putExtra("voiceState", isVoiceOpen);
+        context.startActivity(intent);
+        Log.e("VoiceState", String.valueOf(isVoiceOpen));
+    }
 }
+

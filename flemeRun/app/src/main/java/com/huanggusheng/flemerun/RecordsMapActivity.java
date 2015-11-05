@@ -46,7 +46,6 @@ public class RecordsMapActivity extends Activity{
         //从本地文件获取数据
         String data = operate.readFile(file_name);
         String[] datas = data.split("/");
-        Toast.makeText(RecordsMapActivity.this,"长:"+datas.length,Toast.LENGTH_SHORT).show();
         String[] temp;
         LatLng latLng_cell;
         for (String latLng : datas){
@@ -76,6 +75,11 @@ public class RecordsMapActivity extends Activity{
      */
     public void draw() {
         DrawLine drawLine = new DrawLine(getApplicationContext(), mBaiduMap);
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         for (int i = 2; i < latLngList.size(); i++) {
             drawLine.draw(latLngList.get(i-2),latLngList.get(i-1),latLngList.get(i));
         }

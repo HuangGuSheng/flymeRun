@@ -167,9 +167,10 @@
                 android:textColor="#ff000000"
                 />
             <com.leaking.slideswitch.SlideSwitch
+                android:id="@+id/switch_speak"
                 android:layout_width="20dip"
                 android:layout_height="40dip"
-                slideswitch:isOpen="false"
+                slideswitch:isOpen="true"
                 slideswitch:shape="circle"
                 slideswitch:themeColor="#f200aa96"
                 android:layout_alignParentRight="true"

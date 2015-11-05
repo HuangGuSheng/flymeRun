@@ -51,7 +51,7 @@ public class ListActivity extends Activity implements AdapterView.OnItemClickLis
         dbHelper = new DbHelper(this,"flymeRun.db",null,1);
         db = dbHelper.getReadableDatabase();
         //查询数据库
-        Cursor cursor = db.query(DbHelper.TABLE_NAME,null,null,null,null,null,null);
+        Cursor cursor = db.query(DbHelper.TABLE_NAME,null,null,null,null,null,"id desc");
         if(cursor.moveToFirst()){
             do{
                 //遍历cursor对象
@@ -62,7 +62,6 @@ public class ListActivity extends Activity implements AdapterView.OnItemClickLis
                 records = new Records();
                 records.setDate(date);
                 records.setDuration(duration);
-                Toast.makeText(ListActivity.this, distance+"-"+speed, Toast.LENGTH_SHORT).show();
                 records.setDistance(Double.parseDouble(distance));
                 records.setSpeed(Double.parseDouble(speed));
                 list.add(records);
@@ -74,7 +73,6 @@ public class ListActivity extends Activity implements AdapterView.OnItemClickLis
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Records record = list.get(position);
-        Toast.makeText(ListActivity.this,record.getDate(),Toast.LENGTH_LONG).show();
         Intent intent = new Intent(ListActivity.this,RecordsMapActivity.class);
         intent.putExtra("file_name",record.getDate());
         startActivity(intent);
