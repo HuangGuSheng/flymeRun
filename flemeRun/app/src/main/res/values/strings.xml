@@ -1,6 +1,12 @@
 <resources>
-    <string name="app_name">flemeRun</string>
+    <string name="app_name">FlymeRun</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+
+    <string name="text_totaldistance">总距离 </string>
+    <string name="text_totaltime">总次数 </string>
+
+    <string name="startRun">开始跑步</string>
+    <string name="history">历史轨迹</string>
 </resources>
